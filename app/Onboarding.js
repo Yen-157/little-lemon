@@ -39,45 +39,44 @@ export default function OnboardingScreen ({ navigation }){
       await AsyncStorage.setItem('firstname', firstName);
       await AsyncStorage.setItem('email', email);
       alert("Form submitted successfully!");
+      navigation.navigate('Profile');
     }
   };
   return(
-  <>
-    <View style={styles.logopicture}>
-      <Image style={styles.logo} source={require('../assets/images/Logo.png')}/>
-    </View>
-    <View style={styles.body}>
-      <Text style={styles.text1}> Let us get to know you </Text>
-      <Text style={styles.text1}> First Name </Text>
-      <TextInput
-        style={styles.text2}
-        value={firstName}
-        onChangeText={onChangeFirstName}
-        placeholder={'first name'}
-      />
-      <Text style={styles.text1}> Email </Text>
-      <TextInput
-        style={styles.text2}
-        value={email}
-        onChangeText={onChangeEmail}
-        placeholder={'email'}
-        keyboardType={'email-address'}
-      />
-    </View>
-    <View>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Button
-        style={styles.buttonStyle}
-        title ="Next"
-        onPress={() => {
-          handleSubmit();
-          navigation.navigate('Profile');
-        }}
-      >
-      </Button>
-    </View>
-
-  </>
+    <>
+      <View style={styles.logopicture}>
+        <Image style={styles.logo} source={require('../assets/images/Logo.png')}/>
+      </View>
+      <View style={styles.body}>
+        <Text style={styles.text1}> Let us get to know you </Text>
+        <Text style={styles.text1}> First Name </Text>
+        <TextInput
+          style={styles.text2}
+          value={firstName}
+          onChangeText={onChangeFirstName}
+          placeholder={'first name'}
+        />
+        <Text style={styles.text1}> Email </Text>
+        <TextInput
+          style={styles.text2}
+          value={email}
+          onChangeText={onChangeEmail}
+          placeholder={'email'}
+          keyboardType={'email-address'}
+        />
+      </View>
+      <View>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Button
+          style={styles.buttonStyle}
+          title ="Next"
+          onPress={() => {
+            handleSubmit();
+          }}
+        >
+        </Button>
+      </View>
+    </>
 )}
 
 const styles = StyleSheet.create({

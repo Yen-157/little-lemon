@@ -57,8 +57,15 @@ export default function Profile({
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const imageUri = result.assets[0].uri;
+      setImage(imageUri);
+      await AsyncStorage.setItem('profileImage', imageUri);
     }
+  };
+
+  const removeImage = async () => {
+    setImage(null);
+    await AsyncStorage.removeItem('profileImage');
   };
 
   const getInitials = () => {
@@ -76,7 +83,7 @@ export default function Profile({
         <View>
           <Text>Personal information</Text>
         </View>
-        <View>
+        <View style={styles.imageContainer}>
           <TouchableOpacity onPress={pickImage}>
             {image ? (
               <Image source={{ uri: image }} style={styles.image} />
@@ -86,55 +93,59 @@ export default function Profile({
               </View>
             )}
           </TouchableOpacity>
-          <Text style={styles.name}>First Name</Text>
-          <TextInput
-            style={styles.textInput}
-            value={firstName}
-            onChangeText={setFirstName}
-          />
-          <Text style={styles.name}>Last Name</Text>
-          <TextInput
-            style={styles.textInput}
-            value={lastName}
-            onChangeText={onChangeLastName}
-          />
-          <Text style={styles.name}>Email</Text>
-          <TextInput
-            style={styles.textInput}
-            value={email}
-            onChangeText={setEmail}
-          />
-          <Text style={styles.name}>Phone Number</Text>
-          <MaskedTextInput
-            style={styles.textInput}
-            mask="(999) 999-9999"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="numeric"
-          />
-          <Text style={styles.name}>Email Notifications</Text>
-          <CheckBox
-            title="Order statuses"
-            checked={notifications.orderStatuses}
-            onPress={() => handleCheckboxChange('orderStatuses')}
-          />
-          <CheckBox
-            title="Password changes"
-            checked={notifications.passwordChanges}
-            onPress={() => handleCheckboxChange('passwordChanges')}
-          />
-          <CheckBox
-            title="Special offers"
-            checked={notifications.specialOffers}
-            onPress={() => handleCheckboxChange('specialOffers')}
-          />
-          <CheckBox
-            title="Newsletter"
-            checked={notifications.newsletter}
-            onPress={() => handleCheckboxChange('newsletter')}
-          />
-          <Button title="Logout" onPress={handleLogout} />
+          <View style={styles.buttonContainer}>
+            <Button title="Change" onPress={pickImage} />
+            <Button title="Remove" onPress={removeImage} />
+          </View>
         </View>
+        <Text style={styles.name}>First Name</Text>
+        <TextInput
+          style={styles.textInput}
+          value={firstName}
+          onChangeText={setFirstName}
+        />
+        <Text style={styles.name}>Last Name</Text>
+        <TextInput
+          style={styles.textInput}
+          value={lastName}
+          onChangeText={onChangeLastName}
+        />
+        <Text style={styles.name}>Email</Text>
+        <TextInput
+          style={styles.textInput}
+          value={email}
+          onChangeText={setEmail}
+        />
+        <Text style={styles.name}>Phone Number</Text>
+        <MaskedTextInput
+          style={styles.textInput}
+          mask="(999) 999-9999"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="numeric"
+        />
+        <Text style={styles.name}>Email Notifications</Text>
+        <CheckBox
+          title="Order statuses"
+          checked={notifications.orderStatuses}
+          onPress={() => handleCheckboxChange('orderStatuses')}
+        />
+        <CheckBox
+          title="Password changes"
+          checked={notifications.passwordChanges}
+          onPress={() => handleCheckboxChange('passwordChanges')}
+        />
+        <CheckBox
+          title="Special offers"
+          checked={notifications.specialOffers}
+          onPress={() => handleCheckboxChange('specialOffers')}
+        />
+        <CheckBox
+          title="Newsletter"
+          checked={notifications.newsletter}
+          onPress={() => handleCheckboxChange('newsletter')}
+        />
+        <Button title="Logout" onPress={handleLogout} />
       </ScrollView>
     </GestureHandlerRootView>
   );
@@ -144,6 +155,14 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
     padding: 16,
+  },
+  imageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginLeft: 16,
   },
   name: {
     fontSize: 16,
