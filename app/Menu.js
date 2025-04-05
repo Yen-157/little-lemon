@@ -1,9 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
-import { createTable, getMenuItems, insertMenuItems } from './databaseMenu';
+import {
+  View,
+  FlatList,
+  Text,
+  Image,
+  StyleSheet,
+  ActivityIndicator,
+  SafeAreaView
+} from 'react-native';
+import {
+  createTable,
+  getMenuItems,
+  insertMenuItems,
+  getCategories,
+  getMenuItemsByCategories
+} from './databaseMenu';
+import CategoryFilter from './CategoryFilter';
+import HeroBanner from './HeroBanner';
 
 export default function Menu() {
   const [menuItems, setMenuItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,7 +31,7 @@ export default function Menu() {
       try {
         console.log('Initializing database...');
         await createTable();
-        await checkAndLoadMenu();
+        await loadInitialData();
       } catch (error) {
         console.error('Error initializing database:', error);
         setError(`Database initialization failed: ${error.message}`);
@@ -23,21 +42,49 @@ export default function Menu() {
     initializeDatabase();
   }, []);
 
-  const checkAndLoadMenu = async () => {
+  useEffect(() => {
+    const filterMenuItems = async () => {
+      try {
+        const filteredItems = await getMenuItemsByCategories(selectedCategories, searchText);
+        setMenuItems(filteredItems);
+      } catch (error) {
+        console.error('Error filtering menu items:', error);
+        setError(`Failed to filter menu: ${error.message}`);
+      }
+    };
+
+    if (!loading) {
+      filterMenuItems();
+    }
+  }, [selectedCategories, searchText, loading]);
+
+  const loadInitialData = async () => {
     try {
       const items = await getMenuItems();
-      console.log('Retrieved menu items:', items.length);
 
       if (items.length === 0) {
         await fetchMenuItems();
       } else {
         setMenuItems(items);
+
+        await loadCategories();
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error checking menu:', error);
+      console.error('Error loading initial data:', error);
       setError(`Failed to load menu: ${error.message}`);
       setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const dbCategories = await getCategories();
+
+      setCategories(['all', 'drinks', ...dbCategories]);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      setError(`Failed to load categories: ${error.message}`);
     }
   };
 
@@ -63,6 +110,8 @@ export default function Menu() {
       await insertMenuItems(updatedMenuItems);
 
       setMenuItems(updatedMenuItems);
+
+      await loadCategories();
       setLoading(false);
     } catch (error) {
       console.error('Error fetching menu items:', error);
@@ -71,20 +120,54 @@ export default function Menu() {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-      <View style={styles.textContainer}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemDescription}>{item.description}</Text>
-        <Text style={styles.itemPrice}>${item.price}</Text>
+  const handleCategoryChange = (categories) => {
+    const lowercaseCategories = categories.map(cat => cat.toLowerCase());
+
+    if (lowercaseCategories.includes('all')) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(lowercaseCategories);
+    }
+  };
+
+  const handleSearch = (text) => {
+    setSearchText(text);
+  };
+
+  const renderItem = ({ item, index }) => {
+    // For header items
+    if (item.type === 'header') {
+      return (
+        <View>
+          <HeroBanner onSearch={handleSearch} />
+          <View style={styles.orderBanner}>
+            <Text style={styles.orderText}>ORDER FOR DELIVERY!</Text>
+          </View>
+          <CategoryFilter
+            categories={categories}
+            onCategoryChange={handleCategoryChange}
+            initialCategory="all"
+          />
+        </View>
+      );
+    }
+
+    // For menu items
+    return (
+      <View style={styles.itemContainer}>
+        <View style={styles.textContainer}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemDescription}>{item.description}</Text>
+          <Text style={styles.itemPrice}>${item.price}</Text>
+        </View>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.itemImage}
+          onError={(e) => console.error('Error loading image:', e.nativeEvent.error)}
+        />
       </View>
-      <Image
-        source={{ uri: item.image }}
-        style={styles.itemImage}
-        onError={(e) => console.error('Error loading image:', e.nativeEvent.error)}
-      />
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -103,22 +186,46 @@ export default function Menu() {
     );
   }
 
+  const dataWithHeader = [
+    { type: 'header', id: 'header' },
+    ...menuItems
+  ];
+
   return (
-    <FlatList
-      data={menuItems}
-      renderItem={renderItem}
-      keyExtractor={(item, index) => `${item.name}-${index}`}
-      contentContainerStyle={styles.listContainer}
-      ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No menu items available</Text>
-        </View>
-      }
-    />
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={dataWithHeader}
+        renderItem={renderItem}
+        keyExtractor={(item, index) =>
+          item.type === 'header' ? 'header' : `${item.name}-${index}`
+        }
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No menu items available for selected categories</Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  orderBanner: {
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDEFEE',
+  },
+  orderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -144,7 +251,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#EDEFEE',
     alignItems: 'center',
   },
   textContainer: {
@@ -153,12 +260,12 @@ const styles = StyleSheet.create({
   },
   itemImage: {
     width: 100,
-    height: 100,
+    height: 80,
     resizeMode: 'cover',
     borderRadius: 8,
   },
   itemName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
     color: '#333333',
@@ -167,6 +274,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginBottom: 4,
+    lineHeight: 20,
   },
   itemPrice: {
     fontSize: 16,
@@ -175,7 +283,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   listContainer: {
-    paddingBottom: 16,
+    flexGrow: 1,
   },
   emptyContainer: {
     padding: 20,

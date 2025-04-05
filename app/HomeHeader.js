@@ -17,7 +17,6 @@ export default function Header() {
   }, []);
 
   const getInitials = () => {
-    // Replace with actual initials logic if needed
     return "AB";
   };
 
@@ -45,6 +44,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
+    maxHeight: 70
   },
   logoContainer: {
     flex: 1,
