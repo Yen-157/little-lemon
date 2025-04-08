@@ -11,7 +11,7 @@ const Stack = createNativeStackNavigator();
 
 function Index() {
   return (
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="Onboarding">
         <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="SplashScreen" component={SplashScreen} />
